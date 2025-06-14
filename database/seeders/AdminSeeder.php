@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
-use App\Models\User; // Import the User model
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 class AdminSeeder extends Seeder
 {
@@ -13,22 +16,30 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $admins = [
-            [
-                'name' => 'Admin',
-                'email' => 'admin@gmail.com',
-                'password' => '123456789',
-            ]
-        ];
+        // Create roles table if it doesn't exist
+        if (!Schema::hasTable('roles')) {
+            Schema::create('roles', function (Blueprint $table) {
+                // table structure
+            });
+        }
 
-        foreach ($admins as $admin) {
-            $old_admin = User::where('email', $admin['email'])->first();
-            if (!$old_admin) {
-                User::create([
-                    'name' => $admin['name'],
-                    'email' => $admin['email'],
-                    'password' => bcrypt($admin['password']), // Hash the password
-                ]);
+        // Get the admin role
+        $adminRole = Role::where('slug', 'admin')->first();
+
+        // Create admin user if it doesn't exist
+        if (!User::where('email', 'admin@airquality.com')->exists()) {
+            User::create([
+                'name' => 'Admin User',
+                'email' => 'admin@airquality.com',
+                'password' => Hash::make('admin123'),
+                'role_id' => $adminRole->id,
+            ]);
+        } else {
+            // Update existing admin user with role if needed
+            $adminUser = User::where('email', 'admin@airquality.com')->first();
+            if (!$adminUser->role_id) {
+                $adminUser->role_id = $adminRole->id;
+                $adminUser->save();
             }
         }
     }
